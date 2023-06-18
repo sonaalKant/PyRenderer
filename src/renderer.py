@@ -155,10 +155,50 @@ def triangle(pts, image, z_buffer, uvs, diffusionMap, intensity):
                 z_buffer[x][y] = P[2]
                 pixels[x,y] = (int(color[0]*intensity), int(color[1]*intensity), int(color[2]*intensity))
 
+def triangle(pts, image, z_buffer, intensity):
+    
+    def barycentric(A, B, C, P):
+        AC = C - A
+        AB = B - A
+        PA = A - P
+        u = Vector3d([AC[1], AB[1], PA[1]]).cross(Vector3d([AC[0], AB[0], PA[0]]))
+
+        if abs(u[2] < 1):
+            return Vector3d([-1,1,1])
+
+        return [1.0 - (u[0]+u[1])/u[2], u[1]/u[2], u[0]/u[2]]
+
+    pixels = image.load()
+    bbox_min = [float('inf'), float('inf')]
+    bbox_max = [-float('inf'), -float('inf')]
+    clamp = [image.width -1, image.height-1]
+    for i in range(3):
+        for j in range(2):
+            bbox_min[j] = max(0, min(pts[i][j], bbox_min[j]))
+            bbox_max[j] = min(clamp[j], max(pts[i][j], bbox_max[j]))
+    
+    # print(bbox_min, bbox_max)
+    for x in range(bbox_min[0], bbox_max[0]+1):
+        for y in range(bbox_min[1], bbox_max[1]+1):
+            P = Vector3d([x,y,0])
+            bary_coords = barycentric(pts[0], pts[1], pts[2], P)
+
+            if bary_coords[0]<0 or bary_coords[1]<0 or bary_coords[2]<0 :
+                continue
+            
+            P[2] = 0
+            pIntensity = 0
+            for i in range(3):
+                P[2] += pts[i][2]*bary_coords[i]
+                pIntensity += intensity[i]*bary_coords[i]
+
+            if z_buffer[x][y] < P[2]:
+                z_buffer[x][y] = P[2]
+                pixels[x,y] = tuple([int(pIntensity*255)]*3)
 
 class Renderer:
     def __init__(self):
-        self.light = Vector3d([0., 0., -1])
+        self.light = Vector3d([0., 0., 1])
     
     def get_wireFrame(self, image, mesh):
         pixels = image.load()
@@ -224,6 +264,27 @@ class Renderer:
             # triangle(screen_coords, image, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
             if intensity > 0:
                 triangle(screen_coords, image, self.z_buffer, (int(intensity*255), int(intensity*255), int(intensity*255)))
+    
+    def get_GouraudShaderObj(self, image, mesh):
+        self.z_buffer = [[-float('inf')]*image.width for i in range(image.height)]
+        for idx in range(mesh.nfaces()):
+            face = mesh.getFace(idx)
+            faceNormal = mesh.getFaceNormalCoord(idx)
+
+            world_coords = []
+            screen_coords = []
+            intensity = []
+
+            for i in range(3):
+                world_coords.append(mesh.getVert(face[i]))
+                sc = Vector3d([ int((world_coords[i][0] + 1)*image.width /2), int((world_coords[i][1] + 1)*image.height /2), world_coords[i][2] ])
+                screen_coords.append(sc)
+
+                normal = mesh.getVertNormal(faceNormal[i])
+                normal.normalize()
+                intensity.append(normal.dot(self.light))
+
+            triangle(screen_coords, image, self.z_buffer, intensity)
     
     def get_zbuffer(self):
         

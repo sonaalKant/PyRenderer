@@ -8,9 +8,9 @@ if __name__ == '__main__':
     renderer = Renderer()
 
     image = Image.new("RGB", (800,800), "black")
-    renderer.get_textureObj(image, mesh)
+    renderer.get_GouraudShaderObj(image, mesh)
     image = image.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
-    image.save("ShadedObjV2.bmp")
+    image.save("ShadedObjV3.bmp")
 
     # zbuf = renderer.get_zbuffer()
     # zbuf = zbuf.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
