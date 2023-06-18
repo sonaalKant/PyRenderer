@@ -198,7 +198,8 @@ def triangle(pts, image, z_buffer, intensity):
 
 class Renderer:
     def __init__(self):
-        self.light = Vector3d([0., 0., 1])
+        self.light = Vector3d([1, -1., 1])
+        self.light.normalize()
     
     def get_wireFrame(self, image, mesh):
         pixels = image.load()
