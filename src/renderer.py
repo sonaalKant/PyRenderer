@@ -68,18 +68,18 @@ def line(v1, v2, image, color=(255,255,255)):
 
 
 
-def triangle(pts, image, color):
+def triangle(pts, image, z_buffer, color):
     
     def barycentric(A, B, C, P):
         AC = C - A
         AB = B - A
         PA = A - P
-        u = Vector3d([AC[0], AB[0], PA[0]]).cross(Vector3d([AC[1], AB[1], PA[1]]))
+        u = Vector3d([AC[1], AB[1], PA[1]]).cross(Vector3d([AC[0], AB[0], PA[0]]))
 
-        if abs(u[2] < 1e-2):
+        if abs(u[2] < 1):
             return Vector3d([-1,1,1])
 
-        return [1. - (u[0]+u[1])/u[2], u[0]/u[2], u[1]/u[2]]
+        return [1.0 - (u[0]+u[1])/u[2], u[1]/u[2], u[0]/u[2]]
 
     pixels = image.load()
     bbox_min = [float('inf'), float('inf')]
@@ -90,6 +90,7 @@ def triangle(pts, image, color):
             bbox_min[j] = max(0, min(pts[i][j], bbox_min[j]))
             bbox_max[j] = min(clamp[j], max(pts[i][j], bbox_max[j]))
     
+    # print(bbox_min, bbox_max)
     for x in range(bbox_min[0], bbox_max[0]+1):
         for y in range(bbox_min[1], bbox_max[1]+1):
             P = Vector3d([x,y,0])
@@ -97,7 +98,7 @@ def triangle(pts, image, color):
 
             if bary_coords[0]<0 or bary_coords[1]<0 or bary_coords[2]<0 :
                 continue
-
+            
             pixels[x,y] = color
 
 
@@ -127,7 +128,13 @@ class Renderer:
     def get_textureObj(self, mesh):
         pass
     
+    def get_intensity(self, world_coords):
+        normal = (world_coords[2] - world_coords[0]).cross((world_coords[1]-world_coords[0]))
+        normal.normalize()
+        return normal.dot(self.light)
+
     def get_ShadedObj(self, image, mesh):
+        self.z_buffer = [-float('inf')]*(image.width * image.height)
         for idx in range(mesh.nfaces()):
             face = mesh.getFace(idx)
 
@@ -139,8 +146,10 @@ class Renderer:
                 sc = Vector3d([ int((world_coords[i][0] + 1)*image.width /2), int((world_coords[i][1] + 1)*image.height /2), world_coords[i][2] ])
                 screen_coords.append(sc)
 
-            
-            triangle(screen_coords, image, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
+            intensity = self.get_intensity(world_coords)
+            # triangle(screen_coords, image, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
+            if intensity > 0:
+                triangle(screen_coords, image, self.z_buffer, (int(intensity*255), int(intensity*255), int(intensity*255)))
 
 class Test:
     def __init__(self):

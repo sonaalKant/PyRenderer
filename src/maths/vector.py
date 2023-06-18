@@ -6,22 +6,26 @@ class Vector:
     
     def __add__(self, other):
         assert len(self) == len(other), "Vectors should be of equal length"
-        return Vector([i+j for i,j in zip(self, other)])
+        return type(self)([i+j for i,j in zip(self, other)])
     
     def __sub__(self, other):
         assert len(self) == len(other), "Vectors should be of equal length"
-        return Vector([i-j for i,j in zip(self, other)])
+        return type(self)([i-j for i,j in zip(self, other)])
     
     def dot(self, other):
         assert len(self) == len(other), "Vectors should be of equal length"
         return sum([i*j for i,j in zip(self, other)])
     
-    def __mul__(self, other):
+    def __mul__(self, val):
         assert len(self) == len(other), "Vectors should be of equal length"
-        return Vector([i*j for i,j in zip(self, other)])
+        return type(self)([i*val for i in self])
     
     def cross(self, other):
         pass
+    
+    def normalize(self):
+        norm = (sum([i**2 for i in self]))**0.5
+        self._v = [i/norm for i in self]
     
     def __str__(self):
         return f"Vector : {self._v}"
@@ -36,9 +40,7 @@ class Vector:
         return self.dim
     
 class Vector3d(Vector):
-    def __init__(self, v=None):
-        if v is None:
-            v = [0,0,0]
+    def __init__(self, v=[0,0,0]):
         super().__init__(v)
     
     def cross(self, v):
@@ -48,9 +50,7 @@ class Vector3d(Vector):
 
     
 class Vector2d(Vector):
-    def __init__(self, v):
-        if v is None:
-            v = [0,0]
+    def __init__(self, v=[0,0]):
         super().__init__(v)
     
     def cross(self):

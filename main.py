@@ -10,4 +10,4 @@ if __name__ == '__main__':
     image = Image.new("RGB", (800,800), "black")
     renderer.get_ShadedObj(image, mesh)
     image = image.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
-    image.save("ShadedObjV1.bmp")
+    image.save("ShadedObjV2.bmp")
