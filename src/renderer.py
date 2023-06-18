@@ -1,5 +1,6 @@
 from PIL import Image
 import random
+import numpy as np
 from src.maths.vector import Vector3d, Vector2d
 
 WHITE = (255,255,255)
@@ -99,7 +100,13 @@ def triangle(pts, image, z_buffer, color):
             if bary_coords[0]<0 or bary_coords[1]<0 or bary_coords[2]<0 :
                 continue
             
-            pixels[x,y] = color
+            P[2] = 0
+            for i in range(3):
+                P[2] += pts[i][2]*bary_coords[i]
+            
+            if z_buffer[x][y] < P[2]:
+                z_buffer[x][y] = P[2]
+                pixels[x,y] = color
 
 
 class Renderer:
@@ -134,7 +141,7 @@ class Renderer:
         return normal.dot(self.light)
 
     def get_ShadedObj(self, image, mesh):
-        self.z_buffer = [-float('inf')]*(image.width * image.height)
+        self.z_buffer = [[-float('inf')]*image.width for i in range(image.height)]
         for idx in range(mesh.nfaces()):
             face = mesh.getFace(idx)
 
@@ -150,6 +157,20 @@ class Renderer:
             # triangle(screen_coords, image, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
             if intensity > 0:
                 triangle(screen_coords, image, self.z_buffer, (int(intensity*255), int(intensity*255), int(intensity*255)))
+    
+    def get_zbuffer(self):
+        
+        width,height = len(self.z_buffer[0]), len(self.z_buffer)
+        image = Image.new('L', (width, height), 'black')
+        pixels = image.load()
+        for x in range(width):
+            for y in range(height):
+                # import pdb;pdb.set_trace()
+                if self.z_buffer[x][y] == -float('inf'):
+                    continue
+                pixels[x,y] = int(abs(self.z_buffer[x][y]*255))
+        return image
+    
 
 class Test:
     def __init__(self):

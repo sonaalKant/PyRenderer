@@ -11,3 +11,7 @@ if __name__ == '__main__':
     renderer.get_ShadedObj(image, mesh)
     image = image.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
     image.save("ShadedObjV2.bmp")
+
+    zbuf = renderer.get_zbuffer()
+    zbuf = zbuf.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
+    zbuf.save("zbuf.bmp")
