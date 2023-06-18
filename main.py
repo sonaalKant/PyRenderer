@@ -8,6 +8,6 @@ if __name__ == '__main__':
     renderer = Renderer()
 
     image = Image.new("RGB", (800,800), "black")
-    renderer.get_wireFrame(image, mesh)
+    renderer.get_ShadedObj(image, mesh)
     image = image.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
-    image.save("wireframe.bmp")
+    image.save("ShadedObjV1.bmp")
