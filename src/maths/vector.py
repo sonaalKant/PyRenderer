@@ -19,6 +19,9 @@ class Vector:
     def cross(self, other):
         pass
     
+    def __str__(self):
+        return f"Vector : {self.__v}"
+    
     def __getitem__(self, idx):
         return self.__v[idx]
     

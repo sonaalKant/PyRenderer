@@ -1,4 +1,4 @@
-from math.vector import Vector3d, Vector2d
+from src.maths.vector import Vector3d, Vector2d
 
 class MeshReader:
     def __init__(self, filename, tex_filname=None):
@@ -40,13 +40,13 @@ class MeshReader:
                 tn = []
                 tt = []
                 for i in range(1,4):
-                    l = list(map(int, split[1].split("/")))
-                    t.append(l[0])
-                    tn.append(l[2])
-                    tt.append(l[3])
-                self.__faces.apppend(t)
-                self.__facesTexture.apppend(tt)
-                self.__facesNormal.apppend(tn)
+                    l = list(map(int, split[i].split("/")))
+                    t.append(l[0]-1)
+                    tn.append(l[2]-1)
+                    tt.append(l[1]-1)
+                self.__faces.append(t)
+                self.__facesTexture.append(tt)
+                self.__facesNormal.append(tn)
         objFile.close()
     
     def getVert(self, idx):
@@ -54,6 +54,9 @@ class MeshReader:
     
     def getFace(self, idx):
         return self.__faces[idx]
+    
+    def nfaces(self):
+        return len(self.__faces)
     
     def getVertTex(self, idx):
         return self.__vertsTexture[idx]
