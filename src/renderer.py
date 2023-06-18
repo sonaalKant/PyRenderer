@@ -108,6 +108,53 @@ def triangle(pts, image, z_buffer, color):
                 z_buffer[x][y] = P[2]
                 pixels[x,y] = color
 
+def triangle(pts, image, z_buffer, uvs, diffusionMap, intensity):
+    
+    def barycentric(A, B, C, P):
+        AC = C - A
+        AB = B - A
+        PA = A - P
+        u = Vector3d([AC[1], AB[1], PA[1]]).cross(Vector3d([AC[0], AB[0], PA[0]]))
+
+        if abs(u[2] < 1):
+            return Vector3d([-1,1,1])
+
+        return [1.0 - (u[0]+u[1])/u[2], u[1]/u[2], u[0]/u[2]]
+
+    pixels = image.load()
+    bbox_min = [float('inf'), float('inf')]
+    bbox_max = [-float('inf'), -float('inf')]
+    clamp = [image.width -1, image.height-1]
+    for i in range(3):
+        for j in range(2):
+            bbox_min[j] = max(0, min(pts[i][j], bbox_min[j]))
+            bbox_max[j] = min(clamp[j], max(pts[i][j], bbox_max[j]))
+    
+    # print(bbox_min, bbox_max)
+    for x in range(bbox_min[0], bbox_max[0]+1):
+        for y in range(bbox_min[1], bbox_max[1]+1):
+            P = Vector3d([x,y,0])
+            bary_coords = barycentric(pts[0], pts[1], pts[2], P)
+
+            if bary_coords[0]<0 or bary_coords[1]<0 or bary_coords[2]<0 :
+                continue
+            
+            P[2] = 0
+            new_uv = [0, 0]
+            for i in range(3):
+                P[2] += pts[i][2]*bary_coords[i]
+                new_uv[0] += uvs[i][0]*bary_coords[i]
+                new_uv[1] += uvs[i][1]*bary_coords[i]
+            
+            new_uv[0] = new_uv[0] * diffusionMap.width
+            new_uv[1] = new_uv[1] * diffusionMap.height
+
+            color = diffusionMap.getpixel((new_uv[0], new_uv[1]))
+            
+            if z_buffer[x][y] < P[2]:
+                z_buffer[x][y] = P[2]
+                pixels[x,y] = (int(color[0]*intensity), int(color[1]*intensity), int(color[2]*intensity))
+
 
 class Renderer:
     def __init__(self):
@@ -132,8 +179,28 @@ class Renderer:
                 line(Vector2d([x0, y0]), Vector2d([x1,y1]), pixels, WHITE)
 
     
-    def get_textureObj(self, mesh):
-        pass
+    def get_textureObj(self, image, mesh):
+        self.z_buffer = [[-float('inf')]*image.width for i in range(image.height)]
+        diffusionMap = mesh.diffusionMap
+        for idx in range(mesh.nfaces()):
+            face = mesh.getFace(idx)
+            faceTex = mesh.getFaceTexCoord(idx)
+
+            world_coords = []
+            screen_coords = []
+            uvs = []
+
+            for i in range(3):
+                world_coords.append(mesh.getVert(face[i]))
+                sc = Vector3d([ int((world_coords[i][0] + 1)*image.width /2), int((world_coords[i][1] + 1)*image.height /2), world_coords[i][2] ])
+                screen_coords.append(sc)
+
+                uvs.append(mesh.getVertTex(faceTex[i]))
+
+            intensity = self.get_intensity(world_coords)
+
+            if intensity > 0:
+                triangle(screen_coords, image, self.z_buffer, uvs, diffusionMap, intensity)
     
     def get_intensity(self, world_coords):
         normal = (world_coords[2] - world_coords[0]).cross((world_coords[1]-world_coords[0]))

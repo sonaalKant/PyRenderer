@@ -1,4 +1,5 @@
 from src.maths.vector import Vector3d, Vector2d
+from PIL import Image
 
 class MeshReader:
     def __init__(self, filename, tex_filname=None):
