@@ -1,3 +1,4 @@
+import numpy as np
 
 class Vector:
     def __init__(self, v):
@@ -38,6 +39,15 @@ class Vector:
     
     def __len__(self):
         return self.dim
+    
+    def tonumpy(self):
+        return np.array(self._v)[:,None]
+    
+    def toint(self):
+        return type(self)([int(i) for i in self])
+    
+    def tofloat(self):
+        return type(self)([float(i) for i in self])
     
 class Vector3d(Vector):
     def __init__(self, v=[0,0,0]):
