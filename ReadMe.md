@@ -1,5 +1,7 @@
 # PyRenderer : Simple renderer in python for practice
 
+You can find some obj files [here](https://github.com/ssloy/tinyrenderer/tree/f037c7a0517a632c7391b35131f9746a8f8bb235/obj)
+
 Usage : 
 ```py
 from src.reader import MeshReader # Reader for .obj files
@@ -50,3 +52,8 @@ if __name__ == '__main__':
 
 
 
+### References
+
+1. Thanks to [@ssloy](https://github.com/ssloy/tinyrenderer/wiki) work. Explained clearly and really hands on.
+2. https://learnopengl.com/ is also a great source of reading.
+3. If you are video guy then this is for you https://www.youtube.com/playlist?list=PLAwxTw4SYaPlaHwnoGxJE7NFhEWRCIyet
