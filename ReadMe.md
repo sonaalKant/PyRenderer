@@ -27,7 +27,6 @@ if __name__ == '__main__':
     # Compatible shaders as of now : [Flat shader and Gourard shader]
     image = Image.new("RGB", (WIDTH, HEIGHT), "black")
 
-    # You can get textured image if you have texture map
     renderer.get_GouraudShaderObj(image, mesh)
     image = image.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
     image.save("GourardShader.bmp")
