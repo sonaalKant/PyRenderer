@@ -25,8 +25,9 @@ class Vector:
         pass
     
     def normalize(self):
-        norm = (sum([i**2 for i in self]))**0.5
+        norm = self.norm()
         self._v = [i/norm for i in self]
+        return type(self)(self._v)
     
     def __str__(self):
         return f"Vector : {self._v}"
@@ -49,8 +50,12 @@ class Vector:
     def tofloat(self):
         return type(self)([float(i) for i in self])
     
+    def norm(self):
+        return (sum([i**2 for i in self]))**0.5
+    
 class Vector3d(Vector):
     def __init__(self, v=[0,0,0]):
+        assert len(v) == 3, "3d vector should be of len 3"
         super().__init__(v)
     
     def cross(self, v):

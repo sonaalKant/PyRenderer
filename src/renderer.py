@@ -175,18 +175,21 @@ def triangle(pts, image, z_buffer, uvs=None, diffusionMap=None, intensity=None):
 
 class Renderer:
     def __init__(self, width, height, depth):
-        self.light = Vector3d([1, -1., 1])
+        self.light = Vector3d([-4, 0., 1])
         self.light.normalize()
 
         self.width = width
         self.height = height
         self.depth = depth
 
-        self.camera = Vector3d([0, 0, 3]) # In this implementation camera is always at z
+        self.eye = Vector3d([0, 0, 3])
+        self.center = Vector3d([0., 0., 0.])
+        self.up = Vector3d([0, 1, 0])
 
         self.Projection = np.eye(4)
-        self.Projection[3][2] = -1 / self.camera[2]
-        self.build_viewport(self.width/8, self.height/8, self.width*3/4, self.width*3/4)
+        self.Projection[3][2] = -1 / (self.eye - self.center).norm()
+        # Not sure why this configuration works??
+        self.build_viewport(self.width/8, self.height/8, self.width*3/4, self.height*3/4) 
     
     def build_viewport(self, x, y, w, h):
         self.Viewport = np.eye(4)
@@ -197,8 +200,40 @@ class Renderer:
         self.Viewport[0][3] = x + w/2.
         self.Viewport[1][3] = y + h/2.
         self.Viewport[2][3] = self.depth/2.
+    
+    def get_ModelViewMatrix(self):
+        z = (self.eye - self.center).normalize()
+        x = self.up.cross(z).normalize()
+        y = z.cross(x).normalize()
+        M = np.eye(4)
+        
+        M[0][:3] = x.tonumpy()[:,0]
+        M[1][:3] = y.tonumpy()[:,0]
+        M[2][:3] = z.tonumpy()[:,0]
+        M.T[3][:3] = -self.center.tonumpy()[:,0] 
+
+        return M
 
     
+    def update_camera_params(self, eye, center=None, up=None):
+        
+        self.eye = Vector3d(eye)
+        self.center = Vector3d([0,0,0]) if center is None else Vector3d(center)
+        self.up = Vector3d([0,1,0]) if up is None else Vector3d(up)
+
+        self.Projection = np.eye(4)
+        self.Projection[3][2] = -1 / (self.eye - self.center).norm()
+    
+    def update_light(self, light):
+        self.light = Vector3d(light)
+        self.light.normalize()
+
+    def get_eye(self):
+        return self.eye._v
+
+    def get_light(self):
+        return self.light._v
+
     def get_wireFrame(self, image, mesh):
         pixels = image.load()
         for idx in range(mesh.nfaces()):
@@ -221,6 +256,9 @@ class Renderer:
     def get_textureObj(self, image, mesh):
         self.z_buffer = [[-float('inf')]*image.width for i in range(image.height)]
         diffusionMap = mesh.diffusionMap
+        
+        ModelView = self.get_ModelViewMatrix()
+
         for idx in range(mesh.nfaces()):
             face = mesh.getFace(idx)
             faceTex = mesh.getFaceTexCoord(idx)
@@ -234,8 +272,9 @@ class Renderer:
             for i in range(3):
                 world_coords.append(mesh.getVert(face[i]))
                 # sc = Vector3d([ int((world_coords[i][0] + 1)*image.width /2), int((world_coords[i][1] + 1)*image.height /2), world_coords[i][2] ])
+                
                 vec = Homo(world_coords[i].tonumpy())
-                sc = Mat2vec(self.Viewport @ self.Projection @ vec )
+                sc = Mat2vec(self.Viewport @ self.Projection @ ModelView @ vec )
                 screen_coords.append(sc.toint())
 
                 uvs.append(mesh.getVertTex(faceTex[i]))
@@ -251,6 +290,7 @@ class Renderer:
         normal.normalize()
         return normal.dot(self.light)
 
+    # Flat Shader
     def get_ShadedObj(self, image, mesh):
         self.z_buffer = [[-float('inf')]*image.width for i in range(image.height)]
         for idx in range(mesh.nfaces()):
@@ -271,6 +311,9 @@ class Renderer:
     
     def get_GouraudShaderObj(self, image, mesh):
         self.z_buffer = [[-float('inf')]*image.width for i in range(image.height)]
+        
+        ModelView = self.get_ModelViewMatrix()
+
         for idx in range(mesh.nfaces()):
             face = mesh.getFace(idx)
             faceNormal = mesh.getFaceNormalCoord(idx)
@@ -281,8 +324,12 @@ class Renderer:
 
             for i in range(3):
                 world_coords.append(mesh.getVert(face[i]))
-                sc = Vector3d([ int((world_coords[i][0] + 1)*image.width /2), int((world_coords[i][1] + 1)*image.height /2), world_coords[i][2] ])
-                screen_coords.append(sc)
+                # sc = Vector3d([ int((world_coords[i][0] + 1)*image.width /2), int((world_coords[i][1] + 1)*image.height /2), world_coords[i][2] ])
+                
+                vec = Homo(world_coords[i].tonumpy())
+                sc = Mat2vec(self.Viewport @ self.Projection @ ModelView @ vec )
+                screen_coords.append(sc.toint())
+                
 
                 normal = mesh.getVertNormal(faceNormal[i])
                 normal.normalize()
