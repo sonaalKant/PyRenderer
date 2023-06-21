@@ -40,7 +40,8 @@ if __name__ == '__main__':
 
 
 ### Sample Demo
-
+![](https://github.com/sonaalKant/PyRenderer/blob/main/camera.gif)
+![](https://github.com/sonaalKant/PyRenderer/blob/main/light.gif)
 
 ### TODO
 
